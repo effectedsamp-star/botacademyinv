@@ -1,4 +1,5 @@
 import os
+
 import discord
 from discord import ui
 from discord.ext import commands
@@ -6,14 +7,14 @@ from discord.ext import commands
 
 # ================= НАСТРОЙКИ =================
 
-# Рекомендуется задать токен в переменной окружения DISCORD_BOT_TOKEN.
-# Например в PowerShell:
-# $env:DISCORD_BOT_TOKEN="ВАШ_НОВЫЙ_ТОКЕН"
 BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
-CHANNEL_ID = 1543340680435204186
+CHANNEL_ID = 1562833325742104652
 ADMIN_USER_ID = 1416863224430596107
-GLOBAL_CHAT_ID = 1543348521393070200
+GLOBAL_CHAT_ID = 1562833325742104648
+
+ORGANIZATION_NAME = "Dislocation Mafia"
+ACADEMY_NAME = "Academy Dislocation Mafia"
 
 # ==============================================
 
@@ -25,20 +26,20 @@ intents.members = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 
-# ---------- Единственное модальное окно заявки ----------
-class ApplicationModal(ui.Modal, title="Заявка в academy"):
+# ---------- Модальное окно заявки ----------
+class ApplicationModal(ui.Modal, title="Заявка в Academy Dislocation Mafia"):
     name = ui.TextInput(
         label="1. Имя",
         style=discord.TextStyle.short,
-        placeholder="Ваше имя",
+        placeholder="Твоё реальное имя",
         max_length=100,
         required=True,
     )
 
     reason = ui.TextInput(
-        label="2. Почему вы захотели к нам",
+        label="2. Почему именно Dislocation Mafia",
         style=discord.TextStyle.paragraph,
-        placeholder="Расскажите, почему хотите именно в нашу академию",
+        placeholder="Объясни, почему ты достоин попасть в Dislocation Mafia",
         max_length=1000,
         required=True,
     )
@@ -46,73 +47,62 @@ class ApplicationModal(ui.Modal, title="Заявка в academy"):
     famhistory = ui.TextInput(
         label="3. Фамхистори",
         style=discord.TextStyle.paragraph,
-        placeholder="Опишите вашу историю в семьях/фракциях",
+        placeholder="Перечисли семьи, фракции и свой опыт",
         max_length=1000,
         required=True,
     )
 
     aim_history = ui.TextInput(
-        label="4. Откаты стрельбы",
+        label="4. Опыт стрельбы / откатов",
         style=discord.TextStyle.paragraph,
-        placeholder="Расскажите про ваш опыт откатов/стрельбы",
+        placeholder="Опиши свой опыт в стрельбе и откатам",
         max_length=1000,
         required=True,
     )
 
     goals = ui.TextInput(
-        label="5. Чему хотите научиться у нас",
+        label="5. Чему хочешь научиться",
         style=discord.TextStyle.paragraph,
-        placeholder="Чему хотите научиться в academy",
+        placeholder="Что ты хочешь получить от Academy Dislocation Mafia",
         max_length=1000,
         required=True,
     )
 
     async def on_submit(self, interaction: discord.Interaction):
-        # Сразу отвечаем пользователю, чтобы Discord не показал ошибку Interaction Failed.
         await interaction.response.defer(ephemeral=True)
 
         applicant = interaction.user
 
         embed = discord.Embed(
-            title="🎓 Новая заявка в academy Pivo Syndicate",
-            color=discord.Color.green(),
+            title="🎓 Новая заявка в Academy Dislocation Mafia",
+            color=discord.Color.dark_red(),
             timestamp=discord.utils.utcnow(),
         )
 
         embed.add_field(
-            name="👤 Пользователь",
+            name="👤 Заявитель",
             value=f"{applicant.mention}\n`{applicant.id}`",
             inline=False,
         )
+        embed.add_field(name="1. Имя", value=self.name.value, inline=False)
         embed.add_field(
-            name="1. Имя",
-            value=self.name.value,
-            inline=False,
-        )
-        embed.add_field(
-            name="2. Почему хочет к нам",
+            name="2. Почему именно Dislocation Mafia",
             value=self.reason.value,
             inline=False,
         )
+        embed.add_field(name="3. Фамхистори", value=self.famhistory.value, inline=False)
         embed.add_field(
-            name="3. Фамхистори",
-            value=self.famhistory.value,
-            inline=False,
-        )
-        embed.add_field(
-            name="4. Откаты стрельбы",
+            name="4. Опыт стрельбы / откатов",
             value=self.aim_history.value,
             inline=False,
         )
         embed.add_field(
-            name="5. Чему хочет научиться",
+            name="5. Чему хочешь научиться",
             value=self.goals.value,
             inline=False,
         )
 
-        embed.set_footer(
-            text=f"Заявитель: {applicant} | ID: {applicant.id}"
-        )
+        embed.set_footer(text=f"Заявитель: {applicant} | ID: {applicant.id}")
 
         view = ApplicationDecisionView(applicant_id=applicant.id)
 
@@ -122,22 +112,23 @@ class ApplicationModal(ui.Modal, title="Заявка в academy"):
 
         except discord.Forbidden:
             await interaction.followup.send(
-                "Не удалось отправить заявку администратору. "
-                "Возможно, у администратора закрыты личные сообщения.",
+                "❌ Не удалось отправить заявку администратору. "
+                "Возможно, у него закрыты личные сообщения.",
                 ephemeral=True,
             )
             return
 
         except discord.HTTPException:
             await interaction.followup.send(
-                "Произошла ошибка при отправке заявки. Попробуйте позже.",
+                "❌ Произошла ошибка при отправке заявки. Попробуй позже.",
                 ephemeral=True,
             )
             return
 
         await interaction.followup.send(
-            "✅ Ваша заявка отправлена и находится **на проверке**. "
-            "Ожидайте решения в личных сообщениях.",
+            "✅ Заявка отправлена.\n\n"
+            "Теперь её рассмотрит руководство Dislocation Mafia. "
+            "Не создавай новые заявки и жди решения.",
             ephemeral=True,
         )
 
@@ -150,17 +141,17 @@ class ApplicationModal(ui.Modal, title="Заявка в academy"):
 
         if interaction.response.is_done():
             await interaction.followup.send(
-                "Произошла ошибка при обработке заявки. Попробуйте позже.",
+                "❌ Произошла ошибка при обработке заявки. Попробуй позже.",
                 ephemeral=True,
             )
         else:
             await interaction.response.send_message(
-                "Произошла ошибка при обработке заявки. Попробуйте позже.",
+                "❌ Произошла ошибка при обработке заявки. Попробуй позже.",
                 ephemeral=True,
             )
 
 
-# ---------- Кнопки для администратора ----------
+# ---------- Кнопки решения по заявке ----------
 class ApplicationDecisionView(ui.View):
     def __init__(self, applicant_id: int):
         super().__init__(timeout=None)
@@ -168,20 +159,16 @@ class ApplicationDecisionView(ui.View):
         self.decided = False
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        # Кнопки может использовать только указанный администратор.
         if interaction.user.id != ADMIN_USER_ID:
             await interaction.response.send_message(
-                "❌ У вас нет доступа к рассмотрению этой заявки.",
+                "❌ Рассматривать заявки может только руководство Dislocation Mafia.",
                 ephemeral=True,
             )
             return False
 
         return True
 
-    @ui.button(
-        label="Принять",
-        style=discord.ButtonStyle.green,
-    )
+    @ui.button(label="Принять", style=discord.ButtonStyle.green)
     async def accept_button(
         self,
         interaction: discord.Interaction,
@@ -189,10 +176,7 @@ class ApplicationDecisionView(ui.View):
     ):
         await self.handle_decision(interaction, accepted=True)
 
-    @ui.button(
-        label="Отказать",
-        style=discord.ButtonStyle.red,
-    )
+    @ui.button(label="Отказать", style=discord.ButtonStyle.red)
     async def reject_button(
         self,
         interaction: discord.Interaction,
@@ -212,42 +196,48 @@ class ApplicationDecisionView(ui.View):
             )
             return
 
-        # Сообщаем Discord, что обрабатываем нажатие.
         await interaction.response.defer()
 
         self.decided = True
 
-        applicant = await bot.fetch_user(self.applicant_id)
+        try:
+            applicant = await bot.fetch_user(self.applicant_id)
+        except discord.HTTPException:
+            await interaction.followup.send(
+                "❌ Не удалось найти заявителя.",
+                ephemeral=True,
+            )
+            return
 
         if accepted:
-            status_text = "✅ **Принято**"
+            status_text = "✅ **ПРИНЯТ**"
             color = discord.Color.green()
 
             private_message = (
-                "🎓 Поздравляем! Ваша заявка в academy Pivo Syndicate "
-                "**принята**.\n\n"
-                "Скоро с вами свяжутся старшие академии."
+                f"🎓 **Dislocation Mafia**\n\n"
+                f"Твоя заявка в **Academy Dislocation Mafia** принята.\n\n"
+                f"Ты прошёл первый отбор. Скоро с тобой свяжется руководство.\n"
+                f"Не подведи."
             )
         else:
-            status_text = "❌ **Отказано**"
+            status_text = "❌ **ОТКАЗАНО**"
             color = discord.Color.red()
 
             private_message = (
-                "🎓 К сожалению, ваша заявка в academy Pivo Syndicate "
-                "**отклонена**.\n\n"
-                "Вы можете подать новую заявку позже, когда наберётесь опыта."
+                f"🎓 **Dislocation Mafia**\n\n"
+                f"Твоя заявка в **Academy Dislocation Mafia** отклонена.\n\n"
+                f"На данный момент ты не подошёл. "
+                f"Ты можешь подать новую заявку позже."
             )
 
-        # Отправка результата пользователю в ЛС.
         try:
             await applicant.send(private_message)
-            dm_status = "✅ Результат отправлен пользователю в ЛС."
+            dm_status = "✅ Результат отправлен заявителю в ЛС."
         except discord.Forbidden:
-            dm_status = "⚠️ Не удалось написать пользователю: у него закрыты ЛС."
+            dm_status = "⚠️ Не удалось написать заявителю: у него закрыты ЛС."
         except discord.HTTPException:
-            dm_status = "⚠️ Не удалось отправить результат пользователю в ЛС."
+            dm_status = "⚠️ Не удалось отправить результат заявителю в ЛС."
 
-        # Публикация результата и упоминание пользователя в общем канале.
         global_chat = bot.get_channel(GLOBAL_CHAT_ID)
 
         if global_chat is None:
@@ -258,44 +248,49 @@ class ApplicationDecisionView(ui.View):
 
         if global_chat is not None:
             result_embed = discord.Embed(
-                title="🎓 Результат заявки в academy",
+                title="🎓 Результат заявки в Academy Dislocation Mafia",
                 description=(
-                    f"{applicant.mention} — {status_text}\n"
-                    f"Решение вынесено администратором {interaction.user.mention}."
+                    f"{applicant.mention} — {status_text}\n\n"
+                    f"Решение вынес: {interaction.user.mention}."
                 ),
                 color=color,
                 timestamp=discord.utils.utcnow(),
             )
 
-            await global_chat.send(
-                content=applicant.mention,
-                embed=result_embed,
-                allowed_mentions=discord.AllowedMentions(
-                    users=True,
-                    roles=False,
-                    everyone=False,
-                ),
-            )
+            try:
+                await global_chat.send(
+                    content=applicant.mention,
+                    embed=result_embed,
+                    allowed_mentions=discord.AllowedMentions(
+                        users=True,
+                        roles=False,
+                        everyone=False,
+                    ),
+                )
+            except discord.HTTPException:
+                dm_status += "\n⚠️ Не удалось опубликовать результат в общем канале."
 
-        # Отключаем кнопки в вашем ЛС.
         for child in self.children:
             child.disabled = True
 
         if interaction.message is not None:
-            await interaction.message.edit(view=self)
+            try:
+                await interaction.message.edit(view=self)
+            except discord.HTTPException:
+                pass
 
         await interaction.followup.send(dm_status, ephemeral=True)
 
 
-# ---------- Кнопка открытия заявки ----------
+# ---------- Кнопка подачи заявки ----------
 class ApplicationView(ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
     @ui.button(
-        label="Подать заявку в academy",
-        style=discord.ButtonStyle.green,
-        custom_id="apply_academy_button",
+        label="Подать заявку в Academy",
+        style=discord.ButtonStyle.danger,
+        custom_id="dislocation_mafia_academy_apply",
     )
     async def apply_button(
         self,
@@ -305,8 +300,7 @@ class ApplicationView(ui.View):
         await interaction.response.send_modal(ApplicationModal())
 
 
-# ---------- Единоразовая отправка сообщения с кнопкой ----------
-# ---------- Единоразовая отправка красивой панели с кнопкой ----------
+# ---------- Панель заявки ----------
 async def send_application_message():
     channel = bot.get_channel(CHANNEL_ID)
 
@@ -317,13 +311,17 @@ async def send_application_message():
             print(f"Канал с ID {CHANNEL_ID} не найден.")
             return
 
-    # Проверяем, создавал ли бот эту панель ранее.
-    # Проверяем именно заголовок Embed, потому что теперь текст находится не в msg.content.
-    async for msg in channel.history(limit=100):
+    async for message in channel.history(limit=100):
         if (
-            msg.author == bot.user
-            and msg.embeds
-            and msg.embeds[0].title == "🎓 Academy Pivo Syndicate"
+            message.author == bot.user
+            and message.embeds
+            and message.embeds[0].title == "🎓 ACADEMY DISLOCATION MAFIA"
+        ):
+            print("Панель заявок уже существует. Новая панель не отправлена.")
+            return
+
+    embed = discord.Embed(
+        title="🎓 ACADEMY DISLOCATIONAcademy Pivo Syndicate"
         ):
             print("Панель с кнопкой уже существует, отправка пропущена.")
             return
